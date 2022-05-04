@@ -1,0 +1,36 @@
+{
+  "name": "@sabl/context",
+  "version": "0.1.0",
+  "description": "JavaScript / TypeScript implementation of sabl/context pattern",
+  "scripts": {
+    "build": "tsc --build tsconfig.build.json",
+    "clean": "rimraf coverage dist",
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "test": "jest",
+    "test:view": "jest --coverageReporters text lcov && opener ./coverage/lcov-report/index.html",
+    "test:refresh": "jest --coverageReporters text lcov",
+    "cbt": "pnpm clean && pnpm build && pnpm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "contributors": [
+    ""
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^27.4.1",
+    "@typescript-eslint/eslint-plugin": "^5.10.1",
+    "@typescript-eslint/parser": "^5.10.1",
+    "eslint": "^8.7.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "jest": "^27.4.7",
+    "opener": "^1.5.2",
+    "prettier": "^2.5.1",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^27.1.3",
+    "typescript": "^4.5.5"
+  }
+}
