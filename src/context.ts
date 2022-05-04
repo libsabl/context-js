@@ -2,8 +2,6 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Canceler, CancelFunc } from './canceler';
 
 /** A simple union type of any `T` with `undefined` and `null` */
@@ -22,17 +20,29 @@ export type ContextGetter<T> = (ctx: Context) => Maybe<T>;
 export type ContextSetter<T> = (ctx: Context, item: T) => Context;
 
 /** A simple interface for immutable context trees */
+export interface IContext {
+  /** Retrieve a context value by its key. Returns null if the value is not defined. */
+  value(key: unknown): unknown | undefined | null;
+
+  /** Get the canceler for the context. May return null if the context is not cancelable. */
+  get canceler(): Canceler | null;
+
+  /** Check whether the context is canceled. Returns false if parent if canceler is null. */
+  get canceled(): boolean;
+}
+
+/** Base implementation of {@link IContext} */
 export class Context {
-  readonly #parent: Context | null;
+  readonly #parent: IContext | null;
   readonly #name: string | null;
 
-  constructor(parent?: Context | null, name?: string) {
+  constructor(parent?: IContext | null, name?: string) {
     this.#parent = parent || null;
     this.#name = name || null;
   }
 
   /** Retrieve a context value by its key. Returns null if the value is not defined. */
-  value(key: any): any | undefined | null {
+  value(key: unknown): unknown | undefined | null {
     if (this.#parent == null) return undefined;
     return this.#parent.value(key);
   }
@@ -54,7 +64,7 @@ export class Context {
   }
 
   /** Return a new child context with the provided key and value */
-  withValue(key: any, value: any | null): Context {
+  withValue(key: unknown, value: unknown | null): Context {
     return withValue(this, key, value);
   }
 
@@ -69,10 +79,12 @@ export class Context {
     getter: ContextGetter<T>,
     setter: ContextSetter<T>
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (Context.prototype as any)['get' + prop] = function () {
       return getter(this);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (Context.prototype as any)['with' + prop] = function (item: T) {
       return setter(this, item);
     };
@@ -95,7 +107,7 @@ export class Context {
   }
 
   /** Create a new root context with a key and value */
-  static value(key: any, value: any | null) {
+  static value(key: unknown, value: unknown | null) {
     return new ValueContext(key, value, null, 'Value');
   }
 
@@ -108,13 +120,13 @@ export class Context {
 
 /** ValueContext is an internal implementation, intentionally not exported */
 class ValueContext extends Context {
-  readonly #key: any;
-  readonly #value: any | null;
+  readonly #key: unknown;
+  readonly #value: unknown | null;
 
   constructor(
-    key: any,
-    value: any | null,
-    parent?: Context | null,
+    key: unknown,
+    value: unknown | null,
+    parent?: IContext | null,
     name?: string
   ) {
     super(parent, name);
@@ -125,14 +137,18 @@ class ValueContext extends Context {
     this.#value = value;
   }
 
-  override value(key: any) {
+  override value(key: unknown) {
     if (key === this.#key) return this.#value;
     return super.value(key);
   }
 }
 
 /** Return a new child context with the provided key and value */
-export function withValue(ctx: Context, key: any, value: any | null): Context {
+export function withValue(
+  ctx: IContext,
+  key: unknown,
+  value: unknown | null
+): Context {
   return new ValueContext(key, value, ctx, 'Value');
 }
 
@@ -140,7 +156,7 @@ export function withValue(ctx: Context, key: any, value: any | null): Context {
 class CancelContext extends Context {
   readonly #canceler: Canceler;
 
-  constructor(canceler: Canceler, parent?: Context | null) {
+  constructor(canceler: Canceler, parent?: IContext | null) {
     super(parent, 'Cancel');
     this.#canceler = canceler;
   }
@@ -160,7 +176,7 @@ export interface CancelableContext extends CancelContext {
 
 /** Return a new child context cancelable context.
  * Any cancelation on the parent will be cascaded to the child */
-export function withCancel(ctx: Context): [CancelableContext, CancelFunc] {
+export function withCancel(ctx: IContext): [CancelableContext, CancelFunc] {
   const [clr, cfn] = Canceler.create();
 
   if (ctx != null) {

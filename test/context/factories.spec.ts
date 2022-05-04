@@ -2,8 +2,6 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
 import { Context } from '$';
 
 describe('background', () => {
@@ -47,7 +45,7 @@ describe('value', () => {
   });
 
   it('rejects null key', () => {
-    expect(() => Context.value(null!, 2)).toThrow(/key cannot be null/);
+    expect(() => Context.value(null, 2)).toThrow(/key cannot be null/);
   });
 
   it('accepts null value', () => {

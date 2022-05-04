@@ -52,8 +52,6 @@ describe('cancel', () => {
     // Prove child callbacks were called
     expect(somevar).toBe(3);
   });
-
-  describe('withCancel function', () => {});
 });
 
 describe('Canceler', () => {

@@ -1,27 +1,27 @@
-import { Canceler, CancelFunc, Context } from '$';
-import { CancelableContext, Setter, Getter } from '$/context';
+import { Canceler } from '$';
+import { IContext } from '$/context';
 
-export class CustomContext implements Context {
-  #parent: Context | null;
-  #name: string | null;
-  value(key: any) {
-    throw new Error('Method not implemented.');
+export class CustomRootContext implements IContext {
+  #key: unknown;
+  #value: unknown;
+
+  constructor(key: unknown, value: unknown) {
+    this.#key = key;
+    this.#value = value;
   }
+
+  value(key: unknown) {
+    if (key === this.#key) {
+      return this.#value;
+    }
+    return undefined;
+  }
+
   get canceler(): Canceler | null {
-    throw new Error('Method not implemented.');
+    return null;
   }
+
   get canceled(): boolean {
-    throw new Error('Method not implemented.');
+    return false;
   }
-  toString(): string {
-    throw new Error('Method not implemented.');
-  }
-  withValue(key: any, value: any): Context {
-    throw new Error('Method not implemented.');
-  }
-  withCancel(): [CancelableContext, CancelFunc] {
-    throw new Error('Method not implemented.');
-  }
-  withNumber: Setter<number>;
-  getNumber: Getter<number>;
 }
