@@ -19,6 +19,8 @@ export type ContextGetter<T> = (ctx: Context) => Maybe<T>;
 /** A function that accepts a {@link Context} and an item and returns an new child {@link Context} */
 export type ContextSetter<T> = (ctx: Context, item: T) => Context;
 
+export type ContextKey = symbol | string;
+
 /** A simple interface for immutable context trees */
 export interface IContext {
   /** Retrieve a context value by its key. Returns null if the value is not defined. */
