@@ -10,17 +10,17 @@ See [SETUP.md](./SETUP.md), [CONFIG.md](./CONFIG.md).
 
 ## Contents
 
-- Basic API
+- [Basic API](#basic-icontext-interface)
   - [`IContext`](#basic-icontext-interface)
   - [`withValue`](#value-context)
   - [`withCancel`](#cancelable-context)
-- Extended API
-  - Instance `withValue`, `withCancel`
+- [Immutability](#immutability)
+  - [Overriding values](#overriding-values)
+  - [Cascading cancellations](#cascading-cancellations)
+- [Extended API](#context-class)
+  - Instance [`withValue`](#withvalue), [`withCancel`](#withcancel)
+  - Instance [`require`](#require)
   - Static `background`, `empty`, `value`, `cancel`
-  - Static `use` and fluid builder extensibility
-- Immutability
-  - Value overriding
-  - Cascading cancellations
 - Implementing getters and setters
 - [Examples](#examples)
 
@@ -57,7 +57,7 @@ interface Canceler {
 
 ### Value context
 
-The `withValue` function returns a child context with a value set. Note this function accepts any value that implements the minimal [`IContext` interface](#basic-context-interface) but returns a concrete [`Context`](#extended-context-interface).
+The `withValue` function returns a child context with a value set. Note this function accepts any value that implements the minimal [`IContext` interface](#basic-context-interface) but it returns a concrete [`Context`](#extended-context-interface).
 
 ```ts
 export function withValue(
@@ -74,6 +74,12 @@ The `withCancel` function returns a child cancelable context along with a functi
 ```ts
 export function withCancel(parent: IContext): [Context, CancelFunc] { ... }
 ```
+
+## Immutability
+
+### Overriding values
+
+### Cascading cancellations
 
 ## `Context` class
 
@@ -146,6 +152,30 @@ const [child, cancel] = withCancel(ctx);
 const [child, cancel] = ctx.withCancel();
 ```
 
+#### **require**
+The `require` instance method of `Context` accepts one to six getter functions and returns the applicable retrieved values, while also guaranteeing that all returned values are non-null.
+
+Following the established context pattern, getter functions **should not throw an error** if the requested value is null or undefined. This should be true for any implementations of the base `IContext.value(...)` method, as well as for any symbolic getter functions. 
+
+Often, however, it is helpful to succinctly validate that one or more context values definitely are present and non-null. The `require` function of the `Context` class provides this. The arguments are one to six context getter functions, which also provide static type information to the TypeScript compiler. If only one getter function is used, the the resulting value is returned unwrapped. If more than one getter is used, then all the values are returned in an ordered array which can be desctructured. 
+
+```ts
+import { getUser } from '.../security';
+
+function doStuff(ctx: Context) {
+  // Works, but does not guarntee return value is not null
+  const user = getUser(ctx);
+
+  // Guarantees return value is not null, and preserves static type
+  const user = ctx.require(getUser);
+
+  // Guarantees all return values are not null and preserves static types
+  const [ user, repo, secSvc ] = ctx.require(
+    getUser, getRepo, getSecSvc
+  );
+}
+```
+
 ### Static factory members
 
 #### **background**
@@ -176,28 +206,6 @@ const [root, kill] = Context.cancel();
 
 // Same as this:
 const [root, kill] = withCancel(null);
-```
-
-#### **require**
-Following the established context pattern, getters should not throw an error if the requested value is null or undefined. This should be true for any implementations of the base `IContext.value(...)` method, as well as for any symbolic getter functions. 
-
-Often, however, it is helpful to succinctly validate that one or more context values definitely are present and non-null. The `require` function of the `Context` class provides this. The arguments are one to six context getter functions -- which also provide static type information to the TypeScript compiler. If only one getter function is used, the the resulting value is returned unwrapped. If more than one getter is used, then all the values are returned in an ordered array which can be desctructured. 
-
-```ts
-import { getUser } from '.../security';
-
-function doStuff(ctx: Context) {
-  // Works, but does not guarntee return value is not null
-  const user = getUser(ctx);
-
-  // Guarantees return value is not null, and preserves static type
-  const user = ctx.require(getUser);
-
-  // Guarantees all return values are not null and preserves static types
-  const [ user, repo, secSvc ] = ctx.require(
-    getUser, getRepo, getSecSvc
-  );
-}
 ```
 
 ## Examples
