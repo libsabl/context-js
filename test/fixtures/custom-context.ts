@@ -1,3 +1,7 @@
+// Copyright 2022 the Sabl authors. All rights reserved.
+// Use of this source code is governed by a MIT
+// license that can be found in the LICENSE file.
+
 import { Canceler } from '$';
 import { IContext } from '$/context';
 
