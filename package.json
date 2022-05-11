@@ -13,10 +13,10 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/libsabl/context-js"
   },
   "contributors": [
-    ""
+    "Joshua Honig"
   ],
   "license": "MIT",
   "devDependencies": {

@@ -9,11 +9,6 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "[powershell]": {
-    "debug.saveBeforeStart": "nonUntitledEditorsInActiveGroup",
-    "editor.semanticHighlighting.enabled": false,
-    "editor.wordSeparators": "`~!@#$%^&*()=+[{]}\\|;:'\",.<>/?"
-  },
   "javascript.suggestionActions.enabled": false,
   "jest.autoRun": {
     "watch": false,
