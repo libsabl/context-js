@@ -9,6 +9,7 @@
     "test": "jest",
     "test:view": "jest --coverageReporters text lcov && opener ./coverage/lcov-report/index.html",
     "test:refresh": "jest --coverageReporters text lcov",
+    "test:ci": "jest --coverageReporters text cobertura",
     "cbt": "pnpm clean && pnpm build && pnpm test"
   },
   "repository": {

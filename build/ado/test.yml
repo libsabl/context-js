@@ -17,5 +17,11 @@ jobs:
       - pwsh: 'pnpm install'
         displayName: pnpm install
 
-      - pwsh: 'pnpm test'
+      - pwsh: 'pnpm test:ci'
         displayName: run tests
+        
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          codeCoverageTool: 'Cobertura'
+          summaryFileLocation: 'coverage/cobertura-coverage.xml'
+        displayName: 'Publish Code Coverage'
