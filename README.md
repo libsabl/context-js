@@ -264,7 +264,7 @@ Context values can be retrieved with the `value(...)` method and plain string ke
 // Plain string keys
 function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<PizzaOrder> {
   const user = ctx.value('user');
-  if (user null) throw new NotAuthnticatedError();
+  if (user == null) throw new NotAuthenticatedError();
   if (user as User == null) throw new Error('Invalid context user');
   
   const sec = ctx.value('security-service');
@@ -279,8 +279,8 @@ function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<Pizz
 }
 ```
 
-#### 2.2 Non-chained symbolic getters
-This is the complement to using a exported type-checked setter. An exported type-checked getter can use a private unexported `Symbol` for a key, and can guarantee the type of the returned value. Implemented getter functions called `get*` should be allowed to return null or undefined, while getter functions called `req*` should guarantee that they return non-null values, and should throw errors if no value was available.
+#### 2.2 Symbolic getters
+This is the complement to using a exported type-checked setter. An exported type-checked getter can use a private unexported `Symbol` for a key, and can guarantee the type of the returned value. Implemented getter functions should be allowed to return null or undefined.
 
 ```ts
 // Safe symbolic getters
@@ -288,17 +288,14 @@ import { getUser, getSecSvc } from '.../security';
 import { getRepo } from '.../repo';
 
 function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<PizzaOrder> {
-  // get** pattern: Value may be null or not defined,
+  // Type is guaranteed, by value may be null or not defined,
   // so if it is important that the value is non-null then
-  // callers must add their own null checks.
+  // callers must still add their own null checks.
   const user = getUser(ctx);
   if (user == null) throw new NotAuthenticatedError();
-
-  // req** pattern: Will throw error if value is null or 
-  // undefined, so callers are guaranteed a non-null value
-  const user = reqUser(ctx);
   
-  const sec = reqSecSvc(ctx);
+  const sec = getSecSvc(ctx);
+  if (sec == null) throw new Error('No security service');
 
   await sec.authorize(user, 'order-pizza');
 
@@ -307,6 +304,9 @@ function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<Pizz
   ...
 }
 ```
+
+#### 2.3 Symbolic getters with `require`
+
 
 ```ts
 // Safe symbolic getters

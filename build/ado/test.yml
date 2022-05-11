@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/main/service-schema.json
+
+trigger: 
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: test
+    steps:
+      - pwsh: 'curl -fsSL https://get.pnpm.io/install.sh | sh -'
+        displayName: install pnpm
+        
+      - pwsh: 'pnpm install'
+        displayName: pnpm install
+
+      - pwsh: 'pnpm test'
+        displayName: run tests
