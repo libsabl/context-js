@@ -11,7 +11,7 @@ pool:
 jobs:
   - job: test
     steps:
-      - pwsh: 'curl -fsSL https://get.pnpm.io/install.sh | sh -'
+      - pwsh: 'npm install -g pnpm'
         displayName: install pnpm
         
       - pwsh: 'pnpm install'
