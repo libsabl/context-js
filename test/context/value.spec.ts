@@ -4,13 +4,43 @@
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
-import { Context } from '$';
+import { Context, IContext, withValue } from '$';
 
 describe('withValue', () => {
-  it('creates a child context', () => {
+  it('creates a child context from string key', () => {
     const root = Context.background;
     const child = root.withValue('a', 2);
     expect(child.value('a')).toBe(2);
+  });
+
+  it('creates a child context from symbol key', () => {
+    const sym = Symbol('x');
+    const root = Context.background;
+    const child = root.withValue(sym, 2);
+    expect(child.value(sym)).toBe(2);
+  });
+
+  it('creates a child context from setter', () => {
+    const k = Symbol('number');
+    const setK = function (ctx: IContext, n: number) {
+      return withValue(ctx, k, n);
+    };
+
+    const root = Context.background;
+    const child = root.withValue(setK, 2);
+    expect(child.value(k)).toBe(2);
+  });
+
+  it('rejects null key', () => {
+    const ctx = Context.background;
+    expect(() => ctx.withValue(null!, 1)).toThrow('key cannot be null');
+  });
+
+  it('rejects invalid key type', () => {
+    const ctx = Context.background;
+    expect(() => ctx.withValue(<string>(<unknown>2), 1)).toThrow(
+      'Invalid context key or setter'
+    );
   });
 });
 

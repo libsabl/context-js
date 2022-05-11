@@ -2,23 +2,18 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-import { Context, Maybe } from '$/context';
+import { IContext, Context, Maybe, withValue } from '$/context';
 
-const ctxKeyNumber = Symbol('number');
+const cxtKeyNumber = Symbol('number');
 
-export function getNumber(ctx: Context) {
-  return ctx.value(ctxKeyNumber) as Maybe<number>;
+/** Get the number from a context */
+export function getNumber(ctx: IContext): Maybe<number> {
+  return ctx.value(cxtKeyNumber) as number;
 }
 
-export function withNumber(ctx: Context, n: number) {
-  return ctx.withValue(ctxKeyNumber, n);
+/** Set the number on a context */
+export function withNumber(ctx: IContext, n: number): Context {
+  return withValue(ctx, cxtKeyNumber, n);
 }
 
-declare module '$/context' {
-  interface Context {
-    withNumber: Setter<number>;
-    getNumber: Getter<number>;
-  }
-}
-
-Context.use('Number', getNumber, withNumber);
+getNumber.label = cxtKeyNumber.description;

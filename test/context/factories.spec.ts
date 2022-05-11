@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-import { Context } from '$';
+import { Context, IContext, withValue } from '$';
 
 describe('background', () => {
   it('returns a background context', () => {
@@ -37,15 +37,42 @@ describe('empty', () => {
 });
 
 describe('value', () => {
-  it('creates a root value context', () => {
+  it('creates a root value context - string key', () => {
     const ctx = Context.value('a', 2);
     expect(ctx.toString()).toBe('context.Value');
     expect(ctx.canceler).toBeNull();
     expect(ctx.value('a')).toBe(2);
   });
 
+  it('creates a root value context - symbol key', () => {
+    const k = Symbol('a');
+    const ctx = Context.value(k, 2);
+    expect(ctx.toString()).toBe('context.Value');
+    expect(ctx.canceler).toBeNull();
+    expect(ctx.value(k)).toBe(2);
+  });
+
+  it('creates a root value context - setter', () => {
+    const k = Symbol('number');
+    const setK = function (ctx: IContext, n: number) {
+      return withValue(ctx, k, n);
+    };
+    const ctx = Context.value(setK, 2);
+    expect(ctx.toString()).toBe('context.Value');
+    expect(ctx.canceler).toBeNull();
+    expect(ctx.value(k)).toBe(2);
+  });
+
   it('rejects null key', () => {
-    expect(() => Context.value(null, 2)).toThrow(/key cannot be null/);
+    expect(() => Context.value(<string>(<unknown>null), 2)).toThrow(
+      /key cannot be null/
+    );
+  });
+
+  it('rejects invalid key type', () => {
+    expect(() => Context.value(<string>(<unknown>2), 2)).toThrow(
+      'Invalid context key or setter'
+    );
   });
 
   it('accepts null value', () => {

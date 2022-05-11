@@ -25,12 +25,7 @@ See [SETUP.md](./SETUP.md), [CONFIG.md](./CONFIG.md).
 - [Examples](#examples)
 
 
-## Usage
- 
-A context is a simple thread-safe solution to injecting state and dependencies across API boundaries. A single `context` value is generally provided to functions as the first argument, followed by other function-specific arguments. Consuming code can than retrieve needed values or services from the context, can check for operation cancellation, or can wrap the provided context with additional values or cancellation signals and provide to downstream functions.
-
-
-### Basic `IContext` interface
+## Basic `IContext` interface
 A `context` is a simple interface that allows for two operations:
 
 - Retrieving a context value by its key
@@ -38,9 +33,7 @@ A `context` is a simple interface that allows for two operations:
 
 The `IContext` interface:
 
-```ts
-// Note: Named IContext to distinguish from larger 
-// Context class, which has several additional APIs
+```ts 
 interface IContext {
   value(key: symbol | string): unknown;
   get canceler(): Canceler | null;
@@ -57,10 +50,14 @@ interface Canceler {
 }
 ```
 
+> **Note on naming**
+>
+> It is usually discouraged in TypeScript to prefix interfaces with `I` since classes and interfaces can be used interchangeably. In this case the interface is named `IContext` to distinguish it from the `Context` class, described below, which has additional methods. Custom implementations of `IContext` are allowed and need only implement the three members of `IContext`, not the additional members of the `Context` class. 
+>
+
 ### Value context
 
-The `withValue` function is an exact equivalent of go's [WithValue](https://pkg.go.dev/context#WithValue), and returns a child context with a value set. Note this function accepts any value that implements the minimal [`IContext` interface](#basic-context-interface) but returns a concrete [`Context`](#extended-context-interface).
-
+The `withValue` function returns a child context with a value set. Note this function accepts any value that implements the minimal [`IContext` interface](#basic-context-interface) but returns a concrete [`Context`](#extended-context-interface).
 
 ```ts
 export function withValue(
@@ -72,13 +69,13 @@ export function withValue(
 
 ### Cancelable context
 
-The `withCancel` function is an exact equivalent of go's [WithCancel](https://pkg.go.dev/context#WithCancel), and returns a child cancelable context along with a function the can be called to cancel it. Note this function accepts any value that implements the minimal [`IContext` interface](#basic-context-interface) but returns a concrete [`Context`](#extended-context-interface).
+The `withCancel` function returns a child cancelable context along with a function the can be called to cancel it. Note this function accepts any value that implements the minimal [`IContext` interface](#basic-icontext-interface) but returns a concrete [`Context`](#extended-context-interface).
 
 ```ts
 export function withCancel(parent: IContext): [Context, CancelFunc] { ... }
 ```
 
-### Extended `Context` interface
+## `Context` class
 
 This library defines `Context` as a concrete class which implements `IContext` but also provides several instance and static methods for convenient syntax and extensibility.
 
@@ -93,11 +90,24 @@ class Context implements IContext {
   //  Fluid instance syntax
   // =============================================
 
-  /** Create a child context with the provided value set */
-  withValue(key: Symbol | string, value: unknown): Context { ... }
+  /** Create a child context with the provided key and value */
+  withValue(key: symbol | string, value: unknown): Context { ... }
+
+  /** Create a new child context using the provided setter and value */
+  withValue<T>(setter: ContextSetter<T>, item: T): Context { ... }
 
   /** Create a child cancelable context */
   withCancel(): Context { ... }
+
+  /** Require one to six context items using their getter functions, 
+   * throwing an error if any is null or undefined */
+  require<T, [T2, T3, ... T6]>(
+    getter : (ctx: IContext) => T,
+   [getter2: (ctx: IContext) => T2,
+    getter3: (ctx: IContext) => T3,
+    ...
+    getter6: (ctx: IContext) => T6]
+  );
 
   // =============================================
   //  Static factories
@@ -106,38 +116,89 @@ class Context implements IContext {
   /** Get a simple root context */
   static get background(): Context { ... }
 
-  /** Create a root empty context with a name */
+  /** Create a new root empty context with a name */
   static empty(name: string): Context { ... }
 
-  /** Create a root context with a value */
-  static value(key: Symbol | string, value: unknown): Context { ... }
+  /** Create a new root context with a value */
+  static value(key: symbol | string, value: unknown): Context { ... }
 
-  /** Create a root cancelable context */
+  /** Create a new root context using the provided setter and value */
+  static value<T>(setter: ContextSetter<T>, value: T): Context { ... }
+   
+  /** Create a new root cancelable context */
   static cancel(): [Context, CancelFunc] { ... }
-
-  // =============================================
-  // Static chained getter / setter registration
-  // =============================================
-  
-  /** Register a new context value getter and setter */
-  static use<T>(
-    prop: string,
-    getter: ContextGetter<T>,
-    setter: ContextSetter<T>,
-    defineReq: boolean = false
-  ) { ... }
 }
 ```
+### Instance methods
+#### **withValue**
+The `withValue` instance method of `Context` accepts either a literal key or a context setter function and a corresponding value. It can be used to chain assignments to add multiple context values. See [examples](#1-setting-up-context).
 
-#### Chained withValue, withCancel
-The instance `withValue` and `withCancel` methods allow chained syntax for setting multiple values, and also make both methods available on any `Context` instance without having to explicitly import the `withValue` and `withCancel` functions.
+#### **withCancel**
+The `withCancel` instance method of `Context` returns a child cancelable context along with a function that can be called to cancel it. It is a convenience alternative to calling the [`withCancel` function](#cancelable-context).
 
-#### Static factory methods
-The static `Context.background` property is the exact equivalent of go's [`context.Background()`](https://pkg.go.dev/context#Background). This libary also provides the static factory methods `empty`, `value`, and `cancel` for creating root contexts. These are especially useful for creating root contexts in unit testing scenarios.
+```ts
+const ctx = Context.value('a', 1);
 
-#### Static `Context.use`
+// Using withCancel function
+const [child, cancel] = withCancel(ctx);
 
+// Using withCancel method of Context, same effect:
+const [child, cancel] = ctx.withCancel();
+```
 
+### Static factory members
+
+#### **background**
+`Context.background` is an empty base context that can be used as a root context.
+
+#### **empty**
+`Context.empty` creates an empty root context with a custom name. The name of the context has no effect whatsoever except in the output of `toString`:
+
+```js
+console.log(`${Context.background}`);     // "context.Background"
+console.log(`${Context.empty('root')}`);  // "context.root"
+```
+
+#### **value**
+`Context.value` creates a root context with a key/value pair set. It accepts either a key literal or a context setter function, along with the value to set. Note the overload which accepts a setter function is generic and can enforce that the value is of the correct type.
+
+```ts
+const rootByString = Context.value('message', 'Hello');
+const rootBySymbol = Context.value(Symbol('x'), 'y');
+const rootBySetter = Context.value(withStartTime, new Date);
+```
+
+#### **cancel**
+`Context.cancel` creates a root cancelable context. It is the equivalent of using [`withCancel`](#cancelable-context) but with a null parent context.
+
+```ts
+const [root, kill] = Context.cancel();
+
+// Same as this:
+const [root, kill] = withCancel(null);
+```
+
+#### **require**
+Following the established context pattern, getters should not throw an error if the requested value is null or undefined. This should be true for any implementations of the base `IContext.value(...)` method, as well as for any symbolic getter functions. 
+
+Often, however, it is helpful to succinctly validate that one or more context values definitely are present and non-null. The `require` function of the `Context` class provides this. The arguments are one to six context getter functions -- which also provide static type information to the TypeScript compiler. If only one getter function is used, the the resulting value is returned unwrapped. If more than one getter is used, then all the values are returned in an ordered array which can be desctructured. 
+
+```ts
+import { getUser } from '.../security';
+
+function doStuff(ctx: Context) {
+  // Works, but does not guarntee return value is not null
+  const user = getUser(ctx);
+
+  // Guarantees return value is not null, and preserves static type
+  const user = ctx.require(getUser);
+
+  // Guarantees all return values are not null and preserves static types
+  const [ user, repo, secSvc ] = ctx.require(
+    getUser, getRepo, getSecSvc
+  );
+}
+```
 
 ## Examples
 
@@ -147,7 +208,7 @@ The static `Context.background` property is the exact equivalent of go's [`conte
 Context values can be set with the `withValue` method and plain string keys. This demonstrates the simplicity of the pattern. In practice, it is preferable to use unexported `symbol` keys with exported getter and setter functions.
 
 ```ts
-// Plain string keys 
+// Plain string keys chained using withValue method of Context class
 const [root, kill] = Context.background.withCancel();
 let ctx = root.withValue('logger', new Logger(root));
     ctx =  ctx.withValue('repo', new Repo(ctx));
@@ -170,26 +231,26 @@ let ctx = withLogger(root.withValue, new Logger(root));
     ctx = withY(ctx, ...);
 ```
 
-#### 1.3 Chained symbolic getters and setters
+#### 1.3 Chained symbolic setters
 
-TypeScript declarations and a call to `Context.use` can be used to bind the symbolic getters and setters to the prototype of the `Context` class. This adds support for a chained `.with*` and `.get*` syntax both for static type-checking and runtime invocation:
+The `Context` class's `withValue` method also accepts a context setter function as the first arguments, so symbolic setters can still be used with a chained syntax:
 
 ```ts
-// Safe symbolic setters and Context.use extensibility
-import { Logger } from '.../logger';
-import { Repo   } from '.../repo';
+// Safe symbolic setters chained using withValue method of Context class
+import { Logger, withLogger } from '.../logger';
+import { Repo  , withRepo   } from '.../repo';
 
-const [root, kill] = Context.background.withCancel();
-let ctx = root.withLogger(new Logger(root))
-    ctx =  ctx.withRepo  (new Repo(ctx))
-              .withX     (...)
-              .withY     (...);
+const [root, kill] = Context.cancel();
+let ctx = root.withValue(withLogger, new Logger(root))
+    ctx =  ctx.withValue(withRepo, new Repo(ctx))
+              .withValue(withX, ...)
+              .withValue(withY, ...);
 ```
 
 ### 2. Retrieving context
 
 #### 2.1 Plain string keys
-Context values can be retrieved with the basic `value(...)` method and plain string keys. This demonstrates the simplicity of the pattern, but in practice this is not the best approach due to potential key collision, and because we lose any static type checking on the return value.
+Context values can be retrieved with the `value(...)` method and plain string keys. This demonstrates the simplicity of the pattern, but in practice this is not the best approach due to potential key collision, and because we lose any static type checking on the return value.
 
 ```ts
 // Plain string keys
@@ -215,7 +276,7 @@ This is the complement to using a exported type-checked setter. An exported type
 
 ```ts
 // Safe symbolic getters
-import { getUser, reqUser, reqSecSvc } from '.../security';
+import { getUser, getSecSvc } from '.../security';
 import { getRepo } from '.../repo';
 
 function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<PizzaOrder> {
@@ -223,10 +284,10 @@ function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<Pizz
   // so if it is important that the value is non-null then
   // callers must add their own null checks.
   const user = getUser(ctx);
-  if (user == null) throw new NotAuthnticatedError();
+  if (user == null) throw new NotAuthenticatedError();
 
-  // req** pattern: Will throw error if value is null or undefined,
-  // so callers are guaranteed a non-null value
+  // req** pattern: Will throw error if value is null or 
+  // undefined, so callers are guaranteed a non-null value
   const user = reqUser(ctx);
   
   const sec = reqSecSvc(ctx);
@@ -239,30 +300,20 @@ function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<Pizz
 }
 ```
 
-#### 2.3 Chained symbolic getters
-TypeScript declartions and a call to `Context.use` can be used to bind the symbolic gettes and setters to the prototype of the `Context` class. This adds support for a chained `.with*` and `.get*` syntax both for static type-checking and runtime invocation. 
-
 ```ts
-// Ensure safe getters are imported / loaded
-import '.../security';
-import '.../repo';
+// Safe symbolic getters
+import { getUser, getSecSvc } from '.../security';
+import { getRepo } from '.../repo';
 
 function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<PizzaOrder> {
-  // get** pattern: Value may be null or not defined,
-  // so if it is important that the value is non-null then
-  // callers must add their own null checks.
-  const user = ctx.getUser();
-  if (user == null) throw new NotAuthnticatedError();
-
-  // req** pattern: Will throw error if value is null or undefined,
-  // so callers are guaranteed a non-null value
-  const user = ctx.reqUser(); 
-  const sec  = ctx.reqSecSvc();
+  const [user, sec, repo] = ctx.require(
+    getUser,
+    getSecSvc,
+    getRepo
+  );
 
   await sec.authorize(user, 'order-pizza');
-
-  const repo = ctx.getRepo();
-  if (repo == null) { ... }
+ 
   ...
 }
 ```
