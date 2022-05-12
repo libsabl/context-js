@@ -12,7 +12,6 @@
     "esModuleInterop": true,
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
-
     "baseUrl": ".",
     "paths": {
       "$": ["src/index.ts"],

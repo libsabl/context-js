@@ -4,6 +4,7 @@ const path = require('path');
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   preset: 'ts-jest',
+  testEnvironment: 'node',
   moduleNameMapper: {
     '^\\$$': path.join(__dirname, 'src'),
     '^\\$/(.*)$': path.join(__dirname, 'src/$1'),
