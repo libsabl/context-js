@@ -1,0 +1,19 @@
+{
+  "configurations": [
+    {
+      "type": "node",
+      "name": "vscode-jest-tests",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "./node_modules/jest/bin/jest.js",
+        "--projects",
+        "./jest.config.js",
+        "--runInBand",
+        "--watchAll=false"
+      ]
+    }
+  ]
+}
