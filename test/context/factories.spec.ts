@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 import { Context, IContext, withValue } from '$';
+import { CustomRootContext } from '$test/fixtures/custom-context';
 
 describe('background', () => {
   it('returns a background context', () => {
@@ -20,6 +21,21 @@ describe('background', () => {
     for (let i = 0; i < 10; i++) {
       expect(Context.background).toBe(bg);
     }
+  });
+});
+
+describe('as', () => {
+  it('returns existing context', function () {
+    const source = Context.empty('hello');
+    const ctx = Context.as(source);
+    expect(ctx).toBe(source);
+  });
+
+  it('wraps a context interface', function () {
+    const source = new CustomRootContext('a', 1);
+    const ctx = Context.as(source);
+    expect(ctx).not.toBe(source);
+    expect(ctx).toBeInstanceOf(Context);
   });
 });
 
