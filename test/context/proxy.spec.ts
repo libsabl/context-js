@@ -2,19 +2,21 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+import { Console } from 'console';
 import { Context, withContext, getContext } from '$';
 
 describe('context proxy', function () {
   it('sets and gets context', function () {
-    const source = global.performance;
+    const source = new Console({
+      stdout: process.stdout,
+      stderr: process.stderr,
+    });
     const ctx = Context.background.withValue('a', 1);
     const proxy = withContext(source, ctx);
 
     // Ensure proxy behaves like source
     expect(proxy).toBeInstanceOf(source.constructor);
-    expect(proxy.toJSON().nodeTiming.name).toEqual(
-      source.toJSON().nodeTiming.name
-    );
+    expect(proxy.log).toEqual(source.log);
 
     // Can retrieve context
     const ctx2 = getContext(proxy);
