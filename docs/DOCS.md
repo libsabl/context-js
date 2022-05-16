@@ -20,7 +20,7 @@
   - [`withValue`](#withvalue-instance)
   - [`withCancel`](#withcancel-instance)
   - [`require`](#require)
-  - [Static `background`, `empty`, `value`, `cancel`](#static-factory-members)
+  - [Static `background`, `as`, `empty`, `value`, `cancel`](#static-factory-members)
 - Implementing getters and setters
 - [Examples](#examples)
   - [Setting up context](#1-setting-up-context)
@@ -124,7 +124,7 @@ Retrieves a context from a proxy object previously created with [`withContext`](
 
 #### Using `withContext` and `getContext`
 
-`withContext` and `getContext` are useful for integrating the context pattern into an existing codebase where it is not possible or practical to change the signatures of many existing functions are APIs. A prime use case is to incorporate the context pattern into existing service middleware patterns such as those used by express. The following example adds a very simple inline middleware to attach a root context to each request. That context can then be retrieved and used in any downstream middleware or endpoint.
+`withContext` and `getContext` are useful for integrating the context pattern into an existing codebase where it is not possible or practical to change the signatures of many existing functions or APIs. A prime use case is to incorporate the context pattern into existing service middleware patterns such as those used by express. The following example adds a very simple inline middleware to attach a root context to each request. That context can then be retrieved and used in any downstream middleware or endpoint.
 
 ```ts
 import { Context, withContext, getContext } from '@sabl/context';
