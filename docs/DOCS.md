@@ -3,14 +3,16 @@
 ## Contents
 
 - [Basic API](#basic-api)
-  - [Core interfaces](#icontext-interface)
+  - [Core interfaces](#core-interfaces-icontext-canceler)
   - [Callback types](#callback-types)
     - [`CancelFunc`](#cancelfunc)
     - [`ContextGetter<T>`](#contextgettert)
     - [`ContextSetter<T>`](#contextsettert)
   - [Static package functions](#static-package-functions)
-    - [`withValue`](#value-context)
-    - [`withCancel`](#cancelable-context)
+    - [`withValue`](#withvalue)
+    - [`withCancel`](#withcancel)
+    - [`withContext`](#withcontext)
+    - [`getContext`](#getcontext)
 - [Immutability](#immutability)
   - [Overriding values](#overriding-values)
   - [Cascading cancellations](#cascading-cancellations)
@@ -18,7 +20,7 @@
   - [`withValue`](#withvalue-instance)
   - [`withCancel`](#withcancel-instance)
   - [`require`](#require)
-  - [Static `background`, `empty`, `value`, `cancel`](#static-factory-members)
+  - [Static `background`, `as`, `empty`, `value`, `cancel`](#static-factory-members)
 - Implementing getters and setters
 - [Examples](#examples)
   - [Setting up context](#1-setting-up-context)
@@ -83,22 +85,78 @@ A context setter function does not accept a key value. Instead, it encapsulates 
 
 ### `withValue`
 
-Returns a child context with a value set. Note this function accepts any value that implements the minimal [`IContext` interface](#icontext-interface) but it returns a concrete [`Context`](#extended-context-interface).
-
 ```ts
 export function withValue(
   parent: IContext, 
   key: symbol | string, 
   value: unknown
-): Context { ... }
+): Context;
 ```
+
+Returns a child context with a value set. Note this function accepts any value that implements the minimal [`IContext` interface](#icontext-interface) but it returns a concrete [`Context`](#extended-context-interface).
 
 ### `withCancel`
 
+```ts
+export function withCancel(parent: IContext): [Context, CancelFunc];
+```
+
 Returns a child cancelable context along with a function the can be called to cancel it. Note this function accepts any value that implements the minimal [`IContext` interface](#icontext-interface) but returns a concrete [`Context`](#extended-context-interface).
 
+### `withContext`
+
 ```ts
-export function withCancel(parent: IContext): [Context, CancelFunc] { ... }
+export function withContext<T>(source: T, ctx: IContext): T;
+```
+
+Returns a proxy of the `source` object with the provided context attached. The context can be retrieved from the proxy object using [`getContext`](#getcontext).
+
+### `getContext`
+
+```ts
+export function getContext(
+  source: unknown, 
+  allowNull: boolean = false
+): Context;
+```
+
+Retrieves a context from a proxy object previously created with [`withContext`](#withcontext). Returns a concrete [`Context`](#context-class) even if the original context provided to `getContext` was not, by internally using [`Context.as`](#as). Will throw an error if no context is present, unless `allowNull` is true.
+
+#### Using `withContext` and `getContext`
+
+`withContext` and `getContext` are useful for integrating the context pattern into an existing codebase where it is not possible or practical to change the signatures of many existing functions or APIs. A prime use case is to incorporate the context pattern into existing service middleware patterns such as those used by express. The following example adds a very simple inline middleware to attach a root context to each request. That context can then be retrieved and used in any downstream middleware or endpoint.
+
+```ts
+import { Context, withContext, getContext } from '@sabl/context';
+
+/* -- service startup -- */
+const app = new [express | koa | etc.]();
+ 
+// Build up shared services to inject
+const ctx = Context.background.
+  withValue(withRepo, new RealRepo()).
+  withValue(withLogger, new RealLogger()).
+  withValue(with..., new ...()) 
+  /* etc */; 
+
+// Attach root context to each incoming request
+app.use((req, res, next) => {
+  return next(withContext(req, ctx), res);
+})
+
+/* -- in other middleware -- */
+async function authorizeMiddleware(req, res, next) {
+  const ctx = getContext(req);
+  // Now retrieve dependencies, etc.
+  const secSvc = ctx.require(getSecSvc);
+}
+
+/* -- in an endpoint -- */
+async function getItems(req, res) {
+  const ctx = getContext(req);
+  // Now retrieve validated state, etc.
+  const [user, order] = ctx.require(getUser, getOrder);
+}
 ```
 
 ## Immutability
@@ -138,22 +196,22 @@ This library defines `Context` as a concrete class which implements `IContext` b
 ```ts
 class Context implements IContext {
   // Base IContext interface:
-  value(key: Symbol | string): unknown { ... }
-  get canceler(): Canceler | null { ... }
-  get canceled(): boolean { ... }
+  value(key: Symbol | string): unknown;
+  get canceler(): Canceler | null;
+  get canceled(): boolean;
 
   // =============================================
   //  Convenience instance methods
   // =============================================
 
   /** Create a child context with the provided key and value */
-  withValue(key: symbol | string, value: unknown): Context { ... }
+  withValue(key: symbol | string, value: unknown): Context;
 
   /** Create a new child context using the provided setter and value */
-  withValue<T>(setter: ContextSetter<T>, item: T): Context { ... }
+  withValue<T>(setter: ContextSetter<T>, item: T): Context;
 
   /** Create a child cancelable context */
-  withCancel(): Context { ... }
+  withCancel(): Context;
 
   /** Require one to six context items using their getter functions, 
    * throwing an error if any is null or undefined */
@@ -170,19 +228,22 @@ class Context implements IContext {
   // =============================================
 
   /** Get a simple root context */
-  static get background(): Context { ... }
+  static get background(): Context;
+
+  /** Wrap an IContext as a concrete Context */
+  static as(source: IContext): Context;
 
   /** Create a new root empty context with a name */
-  static empty(name: string): Context { ... }
+  static empty(name: string): Context;
 
   /** Create a new root context with a value */
-  static value(key: symbol | string, value: unknown): Context { ... }
+  static value(key: symbol | string, value: unknown): Context;
 
   /** Create a new root context using the provided setter and value */
-  static value<T>(setter: ContextSetter<T>, value: T): Context { ... }
+  static value<T>(setter: ContextSetter<T>, value: T): Context;
    
   /** Create a new root cancelable context */
-  static cancel(): [Context, CancelFunc] { ... }
+  static cancel(): [Context, CancelFunc];
 }
 ```
 
@@ -244,6 +305,9 @@ The `Context` class includes several factory members for retrieving or creating 
 
 #### `background`
 `Context.background` is an empty base context that can be used as a root context.
+
+#### `as`
+`Context.as` is a convenient way to accept any `IContext` (interface) value but convert it to a concrete `Context` in order to use the instance methods `withValue`, `withCancel`, and `require`. If the input value is already a `Context` instance then that value is returned. If it is not, a new `Context` instance which wraps the provided value is returned.
 
 #### `empty`
 `Context.empty` creates an empty root context with a custom name. The name of the context has no effect whatsoever except in the output of `toString`:

@@ -4,3 +4,4 @@
 
 export { IContext, Context, withValue, withCancel } from './context';
 export { CancelFunc, Canceler } from './canceler';
+export { withContext, getContext } from './proxy';

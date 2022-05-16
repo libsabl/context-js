@@ -215,6 +215,16 @@ export class Context {
     return this.#background;
   }
 
+  /**
+   * Returns a concrete {@link Context} from the
+   * source interface. If `source` is already a
+   * Context instance then it is returned.
+   */
+  static as(source: IContext): Context {
+    if (source instanceof Context) return source;
+    return new Context(source);
+  }
+
   /** Create a new empty root context */
   static empty(name?: string): Context {
     return new Context(null, name);

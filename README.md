@@ -96,6 +96,8 @@ Consolidating all service injection into a single context parameter makes it eas
 
 *In production code*
 ```ts
+import { Context, withContext, getContext } from '@sabl/context';
+
 /* -- service startup -- */
 const app = new [express | koa | etc.]();
  
@@ -108,8 +110,7 @@ const ctx = Context.background.
 
 // Attach context to each incoming request
 app.use((req, res, next) => {
-  req.context = ctx;
-  return next(req, res);
+  return next(withContext(req, ctx), res);
 })
 
 /* -- export data route -- */ 
@@ -117,8 +118,9 @@ import { exportData } from '$/export-service'
 
 app.use('data/export', async (req, res) => { 
   const exportParams = parseBody(req.body);
+  const ctx = getContext(req);
   // Pass along context to service logic
-  const data = await exportData(req.context, exportParams);
+  const data = await exportData(ctx, exportParams);
   res.json(data);
 })
 ```
