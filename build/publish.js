@@ -54,7 +54,7 @@ function removeChunk(source, label) {
     });
   }
 
-  for (const fl of ['LICENSE', 'package.json']) {
+  for (const fl of ['LICENSE']) {
     console.log(chalk.cyanBright(`  Copying ${fl}`));
     await fs.cp(pkgpath(fl), pubpath(fl));
   }
@@ -73,10 +73,24 @@ function removeChunk(source, label) {
   rdme = removeChunk(rdme, 'REMOVE_FOR_NPM');
   await fs.writeFile(pubpath('README.md'), rdme);
 
+  // Render package.json
+  console.log(chalk.cyanBright('  Rendering package.json'));
+  const pkginfo = JSON.parse(
+    await fs.readFile(pkgpath('package.json'), 'utf8')
+  );
+
+  delete pkginfo.devDependencies;
+  delete pkginfo.scripts;
+  await fs.writeFile(
+    pubpath('package.json'),
+    JSON.stringify(pkginfo, null, 2),
+    'utf8'
+  );
+
   console.log();
 
   // Check version #
-  const pkginfo = JSON.parse(await fs.readFile(pubpath('package.json')));
+
   const pkgv = '' + pkginfo.version;
   if (pkgv.match(/-.+$/)) {
     console.log(chalk.greenBright(`✓ Prerelease version ${pkgv}`));

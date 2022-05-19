@@ -11,7 +11,7 @@
     "test:refresh": "jest --coverageReporters text lcov",
     "test:ci": "jest --coverageReporters text cobertura json",
     "cbt": "pnpm clean && pnpm build && pnpm test",
-    "prepare": "husky install",
+    "postinstall": "husky install",
     "pub": "pnpm clean && pnpm build && node -r esm ./build/publish.js"
   },
   "repository": {
@@ -20,6 +20,10 @@
   },
   "contributors": [
     "Joshua Honig"
+  ],
+  "keywords": [
+    "sabl",
+    "context"
   ],
   "license": "MIT",
   "devDependencies": {
