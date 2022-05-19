@@ -137,5 +137,33 @@ export function indent(source, count = 2) {
     .join(EOL);
 }
 
+/**
+ * Return an array of all the tag names attached to the curent commit
+ * @returns {Promise<string[]>}
+ */
+export async function gitGetTags() {
+  const { stdout: data } = await exec('git log --oneline -n 1');
+  const rx = /tag: ([^,\s]+)/;
+  return [...data.matchAll(rx)].map((m) => m[1]);
+}
+
+/**
+ * Return an array of all the uncommitted changes
+ * @returns {Promise<string[]>}
+ */
+export async function gitGetChanges() {
+  const { stdout: data } = await exec('git diff-index HEAD --');
+  return data.split(/[\r\n]+/);
+}
+
+/**
+ * Check whether there are any uncommitted changes
+ * @returns {Promise<boolean>}
+ */
+export async function gitHasChanges() {
+  const changes = await gitGetChanges();
+  return changes.some((l) => l.trim().length);
+}
+
 export const exec = promisify(exec_cb);
 export const glob = promisify(glob_cb);

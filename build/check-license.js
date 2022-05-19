@@ -4,6 +4,9 @@ import { glob, packageDirFn, repoDirFn, comment, indent } from './util';
 import { EOL } from 'os';
 
 (async () => {
+  const verbose =
+    process.argv.includes('-v') || process.argv.includes('--verbose');
+
   const pkgpath = await packageDirFn();
   const srcfiles = await glob(
     pkgpath.join('src', '**', '*.ts').replace(/\\/g, '/')
@@ -19,9 +22,11 @@ import { EOL } from 'os';
     .filter((l) => l.trim().length)
     .map(comment);
 
-  console.log(EOL + 'Checking for license header' + EOL);
-  console.log(chalk.cyanBright(jshdr.join(EOL)));
-  console.log();
+  console.log(EOL + 'Checking for license header');
+  if (verbose) {
+    console.log(EOL + chalk.cyanBright(jshdr.join(EOL)));
+    console.log();
+  }
 
   const lncnt = jshdr.length;
   let badmatch = false;
@@ -31,9 +36,11 @@ import { EOL } from 'os';
     let header = content.split(/[\r\n]+/).slice(0, lncnt);
 
     if (header.join(EOL) == jshdr.join(EOL)) {
-      console.log(
-        chalk.greenBright(`  ✓ ${fpath.substring(pkgpath.root.length)}`)
-      );
+      if (verbose) {
+        console.log(
+          chalk.greenBright(`  ✓ ${fpath.substring(pkgpath.root.length)}`)
+        );
+      }
 
       continue;
     }
