@@ -1,6 +1,6 @@
 {
   "name": "@sabl/context",
-  "version": "0.2.0-a002",
+  "version": "0.2.0-a003",
   "description": "JavaScript / TypeScript implementation of sabl/context pattern",
   "scripts": {
     "build": "tsc --build tsconfig.build.json",

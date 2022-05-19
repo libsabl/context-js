@@ -6,10 +6,11 @@
 
 **context** is a sabl root pattern that provides a solution for state injection that is simple, extensible, and intrinsicly thread safe. It was first demonstrated in the golang [`context` package](https://pkg.go.dev/context) which is now part of the [**go**](https://go.dev/doc/) standard library.
 
-<!-- BEGIN:REMOVE_FOR_NPM -->
 ## Full Docs
 
 See [DOCS.md](./docs/DOCS.md)
+
+<!-- BEGIN:REMOVE_FOR_NPM -->
 
 ## Developer orientation
 
