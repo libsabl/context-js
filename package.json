@@ -4,14 +4,15 @@
   "description": "JavaScript / TypeScript implementation of sabl/context pattern",
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
-    "clean": "rimraf coverage dist",
+    "clean": "rimraf coverage dist publish",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "test": "jest",
     "test:view": "jest --coverageReporters text lcov && opener ./coverage/lcov-report/index.html",
     "test:refresh": "jest --coverageReporters text lcov",
     "test:ci": "jest --coverageReporters text cobertura json",
     "cbt": "pnpm clean && pnpm build && pnpm test",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "pub": "pnpm clean && pnpm build && node -r esm ./build/publish.js"
   },
   "repository": {
     "type": "git",
