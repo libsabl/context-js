@@ -1,9 +1,12 @@
+[![codecov](https://codecov.io/gh/libsabl/context-js/branch/main/graph/badge.svg?token=TVL1XYSJHA)](https://codecov.io/gh/libsabl/context-js)
+
 # sabl/js/context
 
-[**sabl**](https://github.com/libsabl) is a open-source project to identify, describe, and implement effective software component patterns which solve small problems clearly, can be composed to solve big problems, and which work consistently across many programming langauges.
+[**sabl**](https://github.com/libsabl) is an open-source project to identify, describe, and implement effective software component patterns which solve small problems clearly, can be composed to solve big problems, and which work consistently across many programming langauges.
 
 **context** is a sabl root pattern that provides a solution for state injection that is simple, extensible, and intrinsicly thread safe. It was first demonstrated in the golang [`context` package](https://pkg.go.dev/context) which is now part of the [**go**](https://go.dev/doc/) standard library.
 
+<!-- BEGIN:REMOVE_FOR_NPM -->
 ## Full Docs
 
 See [DOCS.md](./docs/DOCS.md)
@@ -11,6 +14,7 @@ See [DOCS.md](./docs/DOCS.md)
 ## Developer orientation
 
 See [SETUP.md](./docs/SETUP.md), [CONFIG.md](./docs/CONFIG.md).
+<!-- END:REMOVE_FOR_NPM -->
 
 ## Usage
 
@@ -88,7 +92,9 @@ See [SETUP.md](./docs/SETUP.md), [CONFIG.md](./docs/CONFIG.md).
 
 ## Example Use Cases
 
+<!-- BEGIN:REMOVE_FOR_NPM -->
 _**Full docs**: see [DOCS.md](./docs/DOCS.md)_
+<!-- END:REMOVE_FOR_NPM -->
 
 ### Testing
 
