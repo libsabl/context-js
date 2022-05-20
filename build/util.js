@@ -157,6 +157,16 @@ export async function gitGetChanges() {
 }
 
 /**
+ * Return the full current commit hash
+ * @returns {Promise<string>}
+ */
+export async function gitGetCommit() {
+  const { stdout: data } = await exec('git log -n 1');
+  const rx = /commit ([0-9a-f]+)/;
+  return data.match(rx)[1];
+}
+
+/**
  * Check whether there are any uncommitted changes
  * @returns {Promise<boolean>}
  */

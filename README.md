@@ -1,16 +1,17 @@
-[![codecov](https://codecov.io/gh/libsabl/context-js/branch/main/graph/badge.svg?token=TVL1XYSJHA)](https://codecov.io/gh/libsabl/context-js)
+<!-- BEGIN:REMOVE_FOR_NPM -->
+[![codecov](https://codecov.io/gh/libsabl/context-js/branch/main/graph/badge.svg?token=TVL1XYSJHA)](https://app.codecov.io/gh/libsabl/context-js/branch/main)
+<!-- END:REMOVE_FOR_NPM -->
 
 # sabl/js/context
 
 [**sabl**](https://github.com/libsabl) is an open-source project to identify, describe, and implement effective software component patterns which solve small problems clearly, can be composed to solve big problems, and which work consistently across many programming langauges.
 
 **context** is a sabl root pattern that provides a solution for state injection that is simple, extensible, and intrinsicly thread safe. It was first demonstrated in the golang [`context` package](https://pkg.go.dev/context) which is now part of the [**go**](https://go.dev/doc/) standard library.
+<!-- BEGIN:REMOVE_FOR_NPM -->
 
 ## Full Docs
 
 See [DOCS.md](./docs/DOCS.md)
-
-<!-- BEGIN:REMOVE_FOR_NPM -->
 
 ## Developer orientation
 
