@@ -10,6 +10,7 @@ module.exports = {
     '^\\$/(.*)$': path.join(__dirname, 'src/$1'),
     '^\\$test/(.*)$': path.join(__dirname, 'test/$1'),
   },
+  testMatch: ['**/test/**/*.spec.*'],
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*.ts'],
   coverageDirectory: path.join(__dirname, 'coverage'),
