@@ -37,11 +37,10 @@ A context is a simple interface that allows for two operations:
 
 In this implementation, we define two top-level interfaces: `IContext` and `Canceler`:
 
-```ts 
+```ts
 interface IContext {
   value(key: symbol | string): unknown;
   get canceler(): Canceler | null;
-  get canceled(): boolean;
 }
 
 interface Canceler {
