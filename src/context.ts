@@ -25,9 +25,6 @@ export interface IContext {
 
   /** Get the canceler for the context. May return null if the context is not cancelable. */
   get canceler(): Canceler | null;
-
-  /** Check whether the context is canceled. Returns false if parent if canceler is null. */
-  get canceled(): boolean;
 }
 
 /** Base implementation of {@link IContext} */
@@ -54,8 +51,7 @@ export class Context {
 
   /** Check whether the context is canceled. Returns false if parent if canceler is null. */
   get canceled(): boolean {
-    if (this.#parent == null) return false;
-    return this.#parent.canceled;
+    return this.canceler?.canceled || false;
   }
 
   toString(): string {
