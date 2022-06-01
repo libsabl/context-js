@@ -27,6 +27,19 @@
         "-r",
         "esm"
       ]
+    },
+    {
+      "type": "pwa-node",
+      "name": "publish",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/build/publish.js",
+      "runtimeArgs": [
+        "-r",
+        "esm"
+      ]
     }
   ]
 }
