@@ -313,12 +313,22 @@ export interface CancelableContext extends CancelContext {
 export function withCancel(ctx: IContext): [CancelableContext, CancelFunc] {
   const [clr, cfn] = Canceler.create();
 
+  let cancelFunc = cfn;
   if (ctx != null) {
     const parentClr = ctx.canceler;
     if (parentClr != null) {
+      // Ensure parent cancellation is cascaded
       parentClr.onCancel(cfn);
+
+      // Also clean up child call back if it is canceled directly
+      cancelFunc = () => {
+        parentClr.off(cfn);
+        cfn();
+      };
     }
   }
 
-  return [new CancelContext(clr, ctx), cfn];
+  // Return the wrapped cancel func which also removes
+  // the inner cancel callback from its parent
+  return [new CancelContext(clr, ctx), cancelFunc];
 }

@@ -6,6 +6,7 @@
 
 import { Canceler, Context } from '$';
 import { VoidCallback } from '$/canceler';
+import exp from 'constants';
 
 describe('cancel', () => {
   it('creates a root cancelable context', () => {
@@ -51,6 +52,22 @@ describe('cancel', () => {
 
     // Prove child callbacks were called
     expect(somevar).toBe(3);
+  });
+
+  it('removes itself from parent cancelers', () => {
+    const [ctxParent] = Context.cancel();
+    const [ctxChild, cancelChild] = ctxParent.withCancel();
+
+    expect(Canceler.size(ctxParent.canceler)).toBe(1);
+
+    // Cancel the child directly
+    cancelChild();
+    expect(ctxChild.canceled).toBe(true);
+
+    // Parent should not be canceled, but
+    // callback should be removed from parent canceler
+    expect(ctxParent.canceled).toBe(false);
+    expect(Canceler.size(ctxParent.canceler)).toBe(0);
   });
 });
 

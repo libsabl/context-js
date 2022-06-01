@@ -2,12 +2,14 @@
 [![codecov](https://codecov.io/gh/libsabl/context-js/branch/main/graph/badge.svg?token=TVL1XYSJHA)](https://app.codecov.io/gh/libsabl/context-js/branch/main)
 <!-- END:REMOVE_FOR_NPM -->
 
-# sabl/js/context
+# @sabl/context
+ 
+**context** is a pattern for injecting state and dependencies and for propagating cancellation signals. It is simple, mechanically clear, and intrinsically safe for concurrent environments. It was first demonstrated in the [golang](https://go.dev/doc/) standard library [`context` package](https://pkg.go.dev/context). This package makes the same pattern available in TypeScript and JavaScript projects.
 
-[**sabl**](https://github.com/libsabl) is an open-source project to identify, describe, and implement effective software component patterns which solve small problems clearly, can be composed to solve big problems, and which work consistently across many programming langauges.
+For more detail on the context pattern, see sabl / [patterns](https://github.com/libsabl/patterns#patterns) / [context](https://github.com/libsabl/patterns/blob/main/patterns/context.md).
 
-**context** is a sabl root pattern that provides a solution for state injection that is simple, extensible, and intrinsicly thread safe. It was first demonstrated in the golang [`context` package](https://pkg.go.dev/context) which is now part of the [**go**](https://go.dev/doc/) standard library.
 <!-- BEGIN:REMOVE_FOR_NPM -->
+> [**sabl**](https://github.com/libsabl/patterns) is an open-source project to identify, describe, and implement effective software patterns which solve small problems clearly, can be composed to solve big problems, and which work consistently across many programming languages.
 
 ## Full Docs
 
@@ -22,7 +24,7 @@ See [SETUP.md](./docs/SETUP.md), [CONFIG.md](./docs/CONFIG.md).
 
 1. Define a getter and setter
 
-   You can also use plain strings or public symbol keys with `withValue` and `value`, but using the following pattern is much better for both runtime and compile type safety:
+   You can use plain strings or public symbol keys with `withValue` and `value`, but using the following pattern is much better for both runtime and compile type safety:
 
    ```ts
    import { Maybe, IContext, Context, withValue } from '@sabl/context';
