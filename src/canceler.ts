@@ -16,13 +16,16 @@ const cancelerToken = Symbol('Canceler');
 
 export type VoidCallback = () => void;
 
-/** A simple cancelation signaler that support polling for status or  */
+/** A simple cancellation signaler that supports polling for status or registering a callback */
 export class Canceler {
-  readonly #callbacks: VoidCallback[] = [];
+  readonly #callbacks: Set<VoidCallback> = new Set<VoidCallback>();
   #canceled = false;
   #canceling = false;
 
-  /** This constructor is private and should not be called directly */
+  /**
+   * This constructor is private and should not be
+   * called directly. Use Canceler.create instead.
+   */
   constructor(token: symbol, canceled: boolean) {
     if (token !== cancelerToken) {
       throw new Error(
@@ -53,29 +56,42 @@ export class Canceler {
       return;
     }
 
-    this.#callbacks.push(cb);
+    this.#callbacks.add(cb);
+  }
+
+  /** Remove a registered callback */
+  off(cb: () => void) {
+    this.#callbacks.delete(cb);
   }
 
   /** Signal cancellation */
   private cancel(): void {
     if (this.#canceled) return;
-    this.#canceling = true;
     this.#canceled = true;
+    this.#canceling = true;
     const stack = this.#callbacks;
-    while (stack.length) {
+    while (stack.size) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const cb = stack.shift()!;
-      cb();
+      for (const cb of stack) {
+        stack.delete(cb);
+        cb();
+        break;
+      }
     }
     this.#canceling = false;
   }
 
-  /** Creata a new {@link Canceler} and return it along with
+  /** Create a new {@link Canceler} and return it along with
    * the {@link CancelFunc} used to signal cancellation
    */
   static create(canceled = false): [Canceler, CancelFunc] {
     const clr = new Canceler(cancelerToken, canceled || false);
     const cnf: CancelFunc = clr.cancel.bind(clr);
     return [clr, cnf];
+  }
+
+  /** Check the count of registered callbacks on the canceler */
+  static size(clr: Canceler) {
+    return clr.#callbacks.size;
   }
 }

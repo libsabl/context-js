@@ -52,7 +52,7 @@ async function addReadmeHeaders(source, pkgv) {
     md += ' | **tag**: ['`v${pkgv}``](${ghRelease}) `;
   }
   md += ' | **commit**: [`' + commit.substring(0, 9) + '`](' + ghBrowse + ')';
-  md += ' | [**Full docs**](' + docsPath + ')';
+  md += ' | See [**Full docs on GitHub**](' + docsPath + ')';
   return md + EOL + source;
 }
 

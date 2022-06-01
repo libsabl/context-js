@@ -46,6 +46,7 @@ interface IContext {
 interface Canceler {
   canceled: boolean;
   onCancel(cb: () => void): void;
+  off(cb: () => void): void;
 }
 ```
 
@@ -101,6 +102,25 @@ export function withCancel(parent: IContext): [Context, CancelFunc];
 ```
 
 Returns a child cancelable context along with a function the can be called to cancel it. Note this function accepts any value that implements the minimal [`IContext` interface](#icontext-interface) but returns a concrete [`Context`](#extended-context-interface).
+
+**IMPORTANT**: To avoid memory leaks, all cancelable contexts **must** be canceled when their work is complete, including if the work completed successfully. The safest way to accomplish this is to enclose all use of the cancelable context in a `try` block, with a call to the cancel func in an associated `finally` block. There is no harm in calling the same cancel function multiple times. Any calls after the first have no effect and return immediately.
+
+```ts
+async function handleRequest(ctx: IContext, req: Request) {
+  const [childCtx, cancel] = withCancel(ctx);
+  try {
+    /* 
+      ...
+      all logic using childCtx 
+      ...
+    */
+  } finally {
+    // Ensure cancel is called to remove callback
+    // added to an ancestor cancelable context
+    cancel();
+  }
+}
+```
 
 ### `withContext`
 
@@ -182,11 +202,11 @@ console.log(gchild.value('x'));  // undefined, closest match
 
 ### Cascading cancellations
 
-The cancelation propagation architecture of the context pattern provides an intrisically thread-safe way of propagating cancellations to an arbitrary number of descendants, either linearly or fanned.
+The cancellation propagation architecture of the context pattern provides an intrinsically thread-safe way of propagating cancellations to an arbitrary number of descendants, either linearly or fanned.
 
-Cancelation of a given context is always propagated immediately through callbacks to all its descendants, but is not propagated up.
+Cancellation of a given context is always propagated immediately through callbacks to all its descendants, but is not propagated up.
 
-A common scenario is a root context of a web server which is canceled when the program receives a termination signal, which would cascade its cancelation to any and all ongoing requests. Conversely, canceling an individual request does not propagate upwards and kill the entire server.
+A common scenario is a root context of a web server which is canceled when the program receives a termination signal, which would cascade its cancellation to any and all ongoing requests. Conversely, canceling an individual request does not propagate upwards and kill the entire server.
  
 ## `Context` class
 
@@ -279,13 +299,13 @@ The `require` instance method of `Context` accepts one to six getter functions a
 
 Following the established context pattern, getter functions **should not throw an error** if the requested value is null or undefined. This should be true for any implementations of the base `IContext.value(...)` method, as well as for any symbolic getter functions. 
 
-Often, however, it is helpful to succinctly validate that one or more context values definitely are present and non-null. The `require` function of the `Context` class provides this. The arguments are one to six context getter functions, which also provide static type information to the TypeScript compiler. If only one getter function is used, the the resulting value is returned unwrapped. If more than one getter is used, then all the values are returned in an ordered array which can be desctructured. 
+Often, however, it is helpful to succinctly validate that one or more context values definitely are present and non-null. The `require` function of the `Context` class provides this. The arguments are one to six context getter functions, which also provide static type information to the TypeScript compiler. If only one getter function is used, the the resulting value is returned unwrapped. If more than one getter is used, then all the values are returned in an ordered array which can be destructured. 
 
 ```ts
 import { getUser } from '.../security';
 
 function doStuff(ctx: Context) {
-  // Works, but does not guarntee return value is not null
+  // Works, but does not guarantee return value is not null
   const user = getUser(ctx);
 
   // Guarantees return value is not null, and preserves static type
@@ -302,11 +322,11 @@ function doStuff(ctx: Context) {
 
 The `Context` class includes several factory members for retrieving or creating root contexts. `background` is an immutable property which always returns the same value, while the remaining members are functions which create new context instances each time they are called.
 
-#### `background`
-`Context.background` is an empty base context that can be used as a root context.
-
 #### `as`
 `Context.as` is a convenient way to accept any `IContext` (interface) value but convert it to a concrete `Context` in order to use the instance methods `withValue`, `withCancel`, and `require`. If the input value is already a `Context` instance then that value is returned. If it is not, a new `Context` instance which wraps the provided value is returned.
+
+#### `background`
+`Context.background` is an empty base context that can be used as a root context.
 
 #### `empty`
 `Context.empty` creates an empty root context with a custom name. The name of the context has no effect whatsoever except in the output of `toString`:
@@ -352,7 +372,7 @@ let ctx = root.withValue('logger', new Logger(root));
 ```
 
 #### 1.2 Non-chained symbolic setters
-The approach usually used in go is to use private (unexported) key values with public (exported) getter and setter functions. The JavaScript `Symbol` type can be used to create private key values that will never collide. By itself this is an improvement in safety and type-checking over using plain string keys, but we lose the fluid or chained sytax.
+The approach usually used in go is to use private (unexported) key values with public (exported) getter and setter functions. The JavaScript `Symbol` type can be used to create private key values that will never collide. By itself this is an improvement in safety and type-checking over using plain string keys, but we lose the fluid or chained syntax.
 
 ```ts
 // Safe symbolic setters
@@ -389,7 +409,7 @@ Context values can be retrieved with the `value(...)` method and plain string ke
 
 ```ts
 // Plain string keys
-function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<PizzaOrder> {
+function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promise<PizzaOrder> {
   const user = ctx.value('user');
   if (user == null) throw new NotAuthenticatedError();
   if (user as User == null) throw new Error('Invalid context user');
@@ -414,7 +434,7 @@ This is the complement to using a exported type-checked setter. An exported type
 import { getUser, getSecSvc } from '.../security';
 import { getRepo } from '.../repo';
 
-function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<PizzaOrder> {
+function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promise<PizzaOrder> {
   // Type is guaranteed, by value may be null or not defined,
   // so if it is important that the value is non-null then
   // callers must still add their own null checks.
@@ -440,7 +460,7 @@ function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<Pizz
 import { getUser, getSecSvc } from '.../security';
 import { getRepo } from '.../repo';
 
-function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promize<PizzaOrder> {
+function orderPizza(ctx: Context, size: int, toppings: Topping[]) : Promise<PizzaOrder> {
   const [user, sec, repo] = ctx.require(
     getUser,
     getSecSvc,
@@ -492,8 +512,8 @@ import { withValue, Maybe } from '@sabl/context';
 
 ... 
 
-export function getMyService(ctx: IContext): Maybe<MySerice> {
-  return <Maybe<MySerice>>ctx.value(ctxKeyMyService)
+export function getMyService(ctx: IContext): Maybe<MyService> {
+  return <Maybe<MyService>>ctx.value(ctxKeyMyService)
 }
 ```
 
