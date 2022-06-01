@@ -49,7 +49,7 @@ async function addReadmeHeaders(source, pkgv) {
   if (pkgv.match(/^\d+\.\d+\.\d+$/)) {
     docsPath = `https://github.com/libsabl/context-js/blob/v${pkgv}/docs/DOCS.md`;
     const ghRelease = `https://github.com/libsabl/context-js/releases/tag/v${pkgv}`;
-    md += ' | **tag**: ['`v${pkgv}``](${ghRelease}) `;
+    md += ' | **tag**: [`v' + pkgv + '`](' + ghRelease + ') ';
   }
   md += ' | **commit**: [`' + commit.substring(0, 9) + '`](' + ghBrowse + ')';
   md += ' | See [**Full docs on GitHub**](' + docsPath + ')';

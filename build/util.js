@@ -137,14 +137,22 @@ export function indent(source, count = 2) {
     .join(EOL);
 }
 
+const rxtag = /refs\/tags\/([^,\s]+)/;
+
 /**
- * Return an array of all the tag names attached to the curent commit
+ * Return an array of all the tag names attached to the current commit
  * @returns {Promise<string[]>}
  */
 export async function gitGetTags() {
-  const { stdout: data } = await exec('git log --oneline -n 1');
-  const rx = /tag: ([^,\s]+)/g;
-  return [...data.matchAll(rx)].map((m) => m[1]);
+  const { stdout: commitout } = await exec('git rev-parse HEAD');
+  const commit = commitout.trim();
+  const { stdout: data } = await exec('git show-ref');
+  const tags = data
+    .split(/[\r\n]+/)
+    .filter((l) => l.includes(commit))
+    .filter((l) => l.includes(' refs/tags/'))
+    .map((l) => l.match(rxtag)[1]);
+  return tags;
 }
 
 /**
