@@ -143,7 +143,7 @@ export function indent(source, count = 2) {
  */
 export async function gitGetTags() {
   const { stdout: data } = await exec('git log --oneline -n 1');
-  const rx = /tag: ([^,\s]+)/;
+  const rx = /tag: ([^,\s]+)/g;
   return [...data.matchAll(rx)].map((m) => m[1]);
 }
 
