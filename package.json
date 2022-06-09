@@ -1,7 +1,9 @@
 {
   "name": "@sabl/context",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "JavaScript / TypeScript implementation of sabl/context pattern",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
     "clean": "rimraf coverage dist publish",
