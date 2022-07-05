@@ -304,7 +304,8 @@ class CancelContext extends Context {
   }
 }
 
-export interface CancelableContext extends CancelContext {
+/** A {@link Context} with a guaranteed non-null canceler */
+export interface CancelableContext extends Context {
   get canceler(): Canceler;
 }
 

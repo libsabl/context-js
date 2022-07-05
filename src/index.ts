@@ -2,6 +2,15 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-export { IContext, Context, withValue, withCancel } from './context';
+export {
+  IContext,
+  Context,
+  withValue,
+  withCancel,
+  ContextGetter,
+  ContextSetter,
+  ContextKey,
+  Maybe,
+} from './context';
 export { CancelFunc, Canceler } from './canceler';
 export { withContext, getContext } from './proxy';
