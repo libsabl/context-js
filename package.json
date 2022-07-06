@@ -1,6 +1,6 @@
 {
   "name": "@sabl/context",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "JavaScript / TypeScript implementation of sabl/context pattern",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
