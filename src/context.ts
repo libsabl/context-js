@@ -55,6 +55,10 @@ export class Context {
   }
 
   toString(): string {
+    return this[Symbol.toStringTag];
+  }
+
+  get [Symbol.toStringTag](): string {
     return 'context.' + (this.#name || 'Base');
   }
 
@@ -309,9 +313,19 @@ export interface CancelableContext extends Context {
   get canceler(): Canceler;
 }
 
-/** Return a new child context cancelable context.
- * Any cancelation on the parent will be cascaded to the child */
+/**
+ * Return a new child context cancelable context.
+ * Any cancelation on the parent will be cascaded to the child.
+ *
+ * Caller must ensure the returned CancelFunc is called as soon as work is
+ * complete, including if work completes successfully.
+ */
 export function withCancel(ctx: IContext): [CancelableContext, CancelFunc] {
+  if (ctx != null && ctx.canceler != null && ctx.canceler.canceled) {
+    // Parent is already canceled
+    return [<CancelableContext>ctx, makeNoOp()];
+  }
+
   const [clr, cfn] = Canceler.create();
 
   let cancelFunc = cfn;
@@ -332,4 +346,100 @@ export function withCancel(ctx: IContext): [CancelableContext, CancelFunc] {
   // Return the wrapped cancel func which also removes
   // the inner cancel callback from its parent
   return [new CancelContext(clr, ctx), cancelFunc];
+}
+
+const ctxKeyDeadline = Symbol('Deadline');
+
+/** Get the existing deadline, if any, from the context */
+function getDeadline(ctx: IContext): Date | undefined {
+  return <Date | undefined>ctx.value(ctxKeyDeadline);
+}
+
+function makeNoOp(): CancelFunc {
+  return () => {
+    /* no op */
+  };
+}
+
+/**
+ * Return a new child context cancelable context, and ensure
+ * that the child context is canceled within `ms` milliseconds.
+ * Any earlier cancelation on the parent will be cascaded to the child.
+ *
+ * Caller must ensure the returned CancelFunc is called as soon as work is
+ * complete, including if work completes successfully.
+ */
+export function withTimeout(
+  ctx: IContext,
+  ms: number
+): [CancelableContext, CancelFunc] {
+  const deadline = new Date(+new Date() + ms);
+  return withDeadline(ctx, deadline);
+}
+
+/**
+ * Return a new child context cancelable context, and ensure
+ * that the child context is canceled no later than `deadline`.
+ * Any earlier cancelation on the parent will be cascaded to the child.
+ *
+ * Caller must ensure the returned CancelFunc is called as soon as work is
+ * complete, including if work completes successfully.
+ */
+export function withDeadline(
+  ctx: IContext,
+  deadline: Date
+): [CancelableContext, CancelFunc] {
+  if (ctx != null && ctx.canceler != null && ctx.canceler.canceled) {
+    // Parent is already canceled
+    return [<CancelableContext>ctx, makeNoOp()];
+  }
+
+  const deadlineMs = +deadline;
+  const existing = getDeadline(ctx);
+  if (existing != null && +existing < deadlineMs) {
+    // Existing deadline is already earlier.
+    return withCancel(ctx);
+  }
+
+  const [clr, cfn] = Canceler.create();
+  const cancelCtx = new CancelContext(
+    clr,
+    withValue(ctx, ctxKeyDeadline, deadline)
+  );
+
+  const nowMs = +new Date();
+  if (deadlineMs < nowMs) {
+    // Already passed deadline
+    cfn();
+    return [cancelCtx, cfn];
+  }
+
+  const timeout: { token?: NodeJS.Timeout } = {};
+
+  const clearAndCancel: CancelFunc = () => {
+    clearTimeout(timeout.token);
+    cfn();
+  };
+
+  let cancelFunc: CancelFunc;
+  if (ctx != null && ctx.canceler != null) {
+    const parentClr = ctx.canceler;
+    // Ensure parent cancellation is cascaded
+    parentClr.onCancel(clearAndCancel);
+
+    // Also clean up child call back if it is canceled directly
+    cancelFunc = () => {
+      parentClr.off(clearAndCancel);
+      clearTimeout(timeout.token);
+      cfn();
+    };
+  } else {
+    cancelFunc = clearAndCancel;
+  }
+
+  timeout.token = setTimeout(cancelFunc, deadlineMs - nowMs);
+
+  // Return the wrapped cancel func which also clears timeout
+  // and removes the inner cancel callback from its parent
+  return [cancelCtx, cancelFunc];
 }

@@ -43,12 +43,14 @@ describe('empty', () => {
   it('creates a new context', () => {
     const ctx = Context.empty();
     expect(ctx.toString()).toBe('context.Base');
+    expect(Object.prototype.toString.apply(ctx)).toBe('[object context.Base]');
     expect(ctx.canceler).toBeNull();
   });
 
   it('uses provided name', () => {
     const ctx = Context.empty('Empty');
     expect(ctx.toString()).toBe('context.Empty');
+    expect(Object.prototype.toString.apply(ctx)).toBe('[object context.Empty]');
   });
 });
 

@@ -7,6 +7,8 @@ export {
   Context,
   withValue,
   withCancel,
+  withTimeout,
+  withDeadline,
   ContextGetter,
   ContextSetter,
   ContextKey,

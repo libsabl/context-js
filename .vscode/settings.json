@@ -14,5 +14,8 @@
     "watch": false,
     "onSave": "test-src-file",
     "onStartup": ["all-tests"]
-  }
+  },
+  "cSpell.words": [
+    "Deadlined"
+  ]
 }
