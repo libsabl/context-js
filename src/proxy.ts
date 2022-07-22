@@ -6,6 +6,10 @@ import { Context, IContext } from './context';
 
 const attachedContext = Symbol('context');
 
+type EmbeddedContext = {
+  [attachedContext]: IContext;
+};
+
 /**
  * Proxy an input source while attaching a context to it which can be
  * retrieved using {@link getContext}
@@ -14,14 +18,9 @@ const attachedContext = Symbol('context');
  * @returns A proxy of `source`
  */
 export function withContext<T extends object>(source: T, ctx: IContext): T {
-  return new Proxy(source, {
-    get: function (target, p, receiver) {
-      if (p === attachedContext) {
-        return ctx;
-      }
-      return Reflect.get(target, p, receiver);
-    },
-  });
+  const proxy = <T>Object.create(source);
+  (<EmbeddedContext>proxy)[attachedContext] = ctx;
+  return proxy;
 }
 
 /**
@@ -31,7 +30,7 @@ export function withContext<T extends object>(source: T, ctx: IContext): T {
  * @returns The retrieved context
  */
 export function getContext(source: unknown, allowNull = false): Context {
-  const ctx = (<{ [attachedContext]: IContext }>source)[attachedContext];
+  const ctx = (<EmbeddedContext>source)[attachedContext];
   if (!allowNull && ctx == null) {
     throw new Error('Context not assigned to source');
   }

@@ -11,6 +11,8 @@
   - [Static package functions](#static-package-functions)
     - [`withValue`](#withvalue)
     - [`withCancel`](#withcancel)
+    - [`withTimeout`](#withtimeout)
+    - [`withDeadline`](#withdeadline)
     - [`withContext`](#withcontext)
     - [`getContext`](#getcontext)
 - [Immutability](#immutability)
@@ -121,6 +123,22 @@ async function handleRequest(ctx: IContext, req: Request) {
   }
 }
 ```
+
+### `withTimeout`
+
+```ts
+export function withTimeout(parent: IContext, ms: number): [Context, CancelFunc];
+```
+
+`withTimeout` works like `withCancel`, except that it will be automatically canceled after `ms` milliseconds. As with `withCancel`, caller should ensure that the cancel func is called when work is done, including if work completed successfully.
+
+### `withTimeout`
+
+```ts
+export function withDeadline(parent: IContext, deadline: Date): [Context, CancelFunc];
+```
+
+`withTimeout` works like `withCancel`, except that it will be automatically canceled no later than `deadline`. As with `withCancel`, caller should ensure that the cancel func is called when work is done, including if work completed successfully.
 
 ### `withContext`
 

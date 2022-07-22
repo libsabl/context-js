@@ -6,7 +6,6 @@
 
 import { Canceler, Context } from '$';
 import { VoidCallback } from '$/canceler';
-import exp from 'constants';
 
 describe('cancel', () => {
   it('creates a root cancelable context', () => {
