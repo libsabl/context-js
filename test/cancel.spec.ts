@@ -4,8 +4,13 @@
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
-import { Canceler, Context } from '$';
-import { CanceledError, DeadlineError, VoidCallback } from '$/canceler';
+import {
+  Canceler,
+  Context,
+  CanceledError,
+  DeadlineError,
+  VoidCallback,
+} from '$';
 
 describe('cancel', () => {
   it('creates a root cancelable context', () => {
