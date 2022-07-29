@@ -5,12 +5,12 @@
 import {
   Canceler,
   Context,
+  DeadlineError,
   withCancel,
   withDeadline,
   withTimeout,
   withValue,
 } from '$';
-import { DeadlineError } from '$/canceler';
 import { CustomRootContext } from '$test/fixtures/custom-context';
 
 describe('withValue', () => {

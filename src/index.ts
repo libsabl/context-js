@@ -14,5 +14,12 @@ export {
   ContextKey,
   Maybe,
 } from './context';
-export { CancelFunc, Canceler } from './canceler';
+export {
+  CancelFunc,
+  Canceler,
+  CanceledError,
+  DeadlineError,
+  CanceledCallback,
+  VoidCallback,
+} from './canceler';
 export { withContext, getContext } from './proxy';

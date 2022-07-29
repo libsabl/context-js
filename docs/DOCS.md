@@ -23,7 +23,7 @@
   - [`withCancel`](#withcancel-instance)
   - [`require`](#require)
   - [Static `background`, `as`, `empty`, `value`, `cancel`](#static-factory-members)
-- [CanceledError and DeadlinError]()
+- [CanceledError and DeadlinError](#cancellation-errors)
 - Implementing getters and setters
 - [Examples](#examples)
   - [Setting up context](#1-setting-up-context)
