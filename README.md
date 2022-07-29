@@ -21,7 +21,7 @@ See [DOCS.md](./docs/DOCS.md)
 See [SETUP.md](./docs/SETUP.md), [CONFIG.md](./docs/CONFIG.md).
 <!-- END:REMOVE_FOR_NPM -->
 
-## Usage
+## Usage - Context Values
 
 1. Define a getter and setter
 
@@ -94,6 +94,129 @@ See [SETUP.md](./docs/SETUP.md), [CONFIG.md](./docs/CONFIG.md).
    }
    ```
 
+## Usage - Cancellation
+
+Create a root cancelable context with static `Context.cancel()`, or wrap an existing context with `withCancel(ctx)`, which returns the child context along with a function that can be called to cancel it. 
+
+Note that **all cancelable contexts must be canceled** even if their work completes successfully. See [**library docs**](./docs/DOCS.md#withcancel), [**pattern docs**](https://github.com/libsabl/patterns/blob/main/patterns/context.md#cancellation), original [**golang docs**](https://pkg.go.dev/context#WithCancel).
+
+### Cascade cancellation
+
+Cancellation of an ancestor context is immediately cascaded down to all descendant contexts. Cancellation of a descendant context does not bubble up to an ancestor context.
+
+```ts
+const [root  , cancel      ] = Context.cancel();
+const [child , cancelChild ] = withCancel(root);
+const [gChild, cancelGChild] = withCancel(child);
+
+// Cancellations do not bubble up
+cancelGChild();
+console.log(gChild.canceled); // true
+console.log(child.canceled);  // false
+console.log(root.canceled);   // false
+
+// Cancellations do cascade down
+cancel();
+console.log(child.canceled);  // true
+console.log(root.canceled);   // true
+```
+
+### Check for cancellation errors
+
+This library includes two Error types: `CanceledError` and `DeadlineError`. All `DeadlineError`s are also `CanceledError`s. Check whether an existing error or promise reject reason is due to cancellation using the static `CanceledError.is` and `DeadlineError.is` methods: 
+
+```ts
+async function calculate(ctx: IContext, matrix: number[][]): Promise<number> {
+  try {
+    return await superCalc(ctx, matrix);
+  } catch (e) {
+    if (DeadlineError.is(e)) {
+      // Operation specifically canceled due to a timeout
+      ...
+    } else if (CanceledError.is(e)) {
+      // Operation was canceled due to some other reason
+      ...
+    } else {
+      // Something else went wrong
+      ...
+    }
+  }
+}
+```
+
+### Throw your own cancellation errors
+
+Most existing libraries don't know about context. You can easily wrap an existing error or promise rejection reason with any of the following factory functions to create a `CanceledError` or `DeadlineError`:
+
+```ts
+CanceledError.as<T extends object>(reason: T): T
+CanceledError.create(reason?: unknown): CanceledError
+
+DeadlineError.as<T extends object>(reason: T): T
+DeadlineError.create(reason?: unknown): DeadlineError
+```
+
+#### **`as`**
+
+`as` requires a non-null input with `typeof === 'object'`. It decorates the object with a hidden property which is checked by `CanceledError.is` and `DeadlineError.is`.
+
+```ts
+const input = { name: 'my own object' };
+const myError = CanceledError.as(input);
+console.log(input === myError);         // true, it's the same object
+console.log(CanceledError.is(myError)); // also true now
+console.log(myError instanceof Error);  // false. It's the same plain object
+```
+
+#### **`create`**
+
+`create` will wrap the input value, which may be null or undefined.
+
+- If input is null or undefined, a new `CanceledError` or `DeadlineError` is created with a default message
+- If input is as string, the string is used as the message for the new `CanceledError` or `DeadlineError`
+- If input is an Error that is already a `CanceledError` or `DeadlineError`, that the input itself is returned
+- If input is any other value with `typeof === 'object'` but is not a `CanceledError` or `DeadlineError`, then the input is used as the `cause` for a new `CanceledError` or `DeadlineError`
+- Any other input is rejected
+
+```ts
+// Empty
+const err0 = DeadlineError.create(); // Same as `new DeadlineError()`;
+console.log(err0.message); // 'Context deadline was exceeded'
+
+// From a string
+const err1 = DeadlineError.create('a message');
+console.log(err1.message); // 'a message'
+
+// From a decorated Error
+const err2in   = DeadlineError.as(new Error('my own error'));
+const err2out  = DeadlineError.create(err2in);
+console.log(err2in === err2out);  // 'true'. Returned the same object
+
+// From any other 'object' type
+for(let input of [
+  new Error('my own error'),
+  new Date(),
+  { a: 'b' }
+]) { 
+  const err = DeadlineError.create(input);
+  console.log(input === err);        // 'false'
+  console.log(input === err.cause);  // 'true'
+}
+```
+
+**Example: Wrapping errors as DeadlineError or CanceledError**
+
+```ts
+const promise = someLibrary.doAThing();
+promise.catch((reason) => {
+  if (reason && reason.code == someLibrary.ERR_TIMEOUT) {
+    throw DeadlineError.create(reason)
+  } else if (reason && reason.code == someLibrary.ERR_OP_CANCELED_1230) {
+    throw CanceledError.create(reason)
+  }
+  throw reason;
+})
+```
 
 ## Example Use Cases
 

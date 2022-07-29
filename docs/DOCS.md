@@ -23,6 +23,7 @@
   - [`withCancel`](#withcancel-instance)
   - [`require`](#require)
   - [Static `background`, `as`, `empty`, `value`, `cancel`](#static-factory-members)
+- [CanceledError and DeadlinError]()
 - Implementing getters and setters
 - [Examples](#examples)
   - [Setting up context](#1-setting-up-context)
@@ -47,12 +48,13 @@ interface IContext {
 
 interface Canceler {
   canceled: boolean;
+  err: CanceledError | null;
   onCancel(cb: () => void): void;
   off(cb: () => void): void;
 }
 ```
 
-The `Canceler` interface allows for registering a callback upon cancellation. If the `canceler` of a context is null, then the context is not cancelable.
+The `Canceler` interface allows for registering a callback upon cancellation. If the `canceler` of a context is null, then the context is not cancelable. When the associated context is canceled, the `canceled` property is set to `true` and the `err` property is set to a non-null [`CanceledError`](#cancellation-errors).
  
 > **Note on naming: `IContext`**
 >
@@ -64,7 +66,7 @@ The `Canceler` interface allows for registering a callback upon cancellation. If
 This library also defines three callback types:
 
 ```ts
-export type CancelFunc = () => void;
+export type CancelFunc = (reason?: string | Error) => void;
 
 export type ContextGetter<T> = (ctx: IContext) => T | null | undefined;
  
@@ -73,7 +75,7 @@ export type ContextSetter<T> = (ctx: IContext, item: T) => Context;
 
 #### `CancelFunc`
 
-A simple alias for a void-returning function. Represents the signature of the function returned by the static or instance `withCancel` functions which, when called, will cancel the applicable context.
+A simple alias for a void-returning function. Represents the signature of the function returned by the static or instance `withCancel` functions which, when called, will cancel the applicable context. Callers may provide an optional `reason` which should be a string or `Error` describing why the context was canceled.
 
 #### `ContextGetter<T>`
 
@@ -372,6 +374,12 @@ const [root, kill] = Context.cancel();
 // Same as this:
 const [root, kill] = withCancel(null);
 ```
+
+### Cancellation Errors
+
+Whenever a cancelable context is canceled, a `CanceledError` is created. This error is assigned to the associated `Canceler`'s `err` property, and is also provided to any registered cancellation callbacks.
+
+If a context is canceled automatically due to a timeout from `withTimeout` or `withDeadline`, this error is guaranteed to be a `DeadlineError`. Authors can examine any value to determine wether it is a `DeadlineError` or `CanceledError` with `DeadlineError.is(value)` and `CanceledError.is(value)`. See [Usage - Check for Cancellation Errors](../README.md#check-for-cancellation-errors).
 
 ## Examples
 

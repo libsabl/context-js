@@ -4,7 +4,7 @@
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
-import { Canceler, CancelFunc } from './canceler';
+import { Canceler, CancelFunc, DeadlineError } from './canceler';
 
 /** A valid context value key: either a symbol or a string */
 export type ContextKey = symbol | string;
@@ -329,6 +329,7 @@ export function withCancel(ctx: IContext): [CancelableContext, CancelFunc] {
   const [clr, cfn] = Canceler.create();
 
   let cancelFunc = cfn;
+
   if (ctx != null) {
     const parentClr = ctx.canceler;
     if (parentClr != null) {
@@ -336,9 +337,9 @@ export function withCancel(ctx: IContext): [CancelableContext, CancelFunc] {
       parentClr.onCancel(cfn);
 
       // Also clean up child call back if it is canceled directly
-      cancelFunc = () => {
+      cancelFunc = (reason) => {
         parentClr.off(cfn);
-        cfn();
+        cfn(reason);
       };
     }
   }
@@ -410,15 +411,15 @@ export function withDeadline(
   const nowMs = +new Date();
   if (deadlineMs < nowMs) {
     // Already passed deadline
-    cfn();
+    cfn(new DeadlineError());
     return [cancelCtx, cfn];
   }
 
   const timeout: { token?: NodeJS.Timeout } = {};
 
-  const clearAndCancel: CancelFunc = () => {
+  const clearAndCancel: CancelFunc = (reason) => {
     clearTimeout(timeout.token);
-    cfn();
+    cfn(reason);
   };
 
   let cancelFunc: CancelFunc;
@@ -428,16 +429,19 @@ export function withDeadline(
     parentClr.onCancel(clearAndCancel);
 
     // Also clean up child call back if it is canceled directly
-    cancelFunc = () => {
+    cancelFunc = (reason) => {
       parentClr.off(clearAndCancel);
       clearTimeout(timeout.token);
-      cfn();
+      cfn(reason);
     };
   } else {
     cancelFunc = clearAndCancel;
   }
 
-  timeout.token = setTimeout(cancelFunc, deadlineMs - nowMs);
+  timeout.token = setTimeout(
+    () => cancelFunc(new DeadlineError()),
+    deadlineMs - nowMs
+  );
 
   // Return the wrapped cancel func which also clears timeout
   // and removes the inner cancel callback from its parent

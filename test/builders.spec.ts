@@ -10,6 +10,7 @@ import {
   withTimeout,
   withValue,
 } from '$';
+import { DeadlineError } from '$/canceler';
 import { CustomRootContext } from '$test/fixtures/custom-context';
 
 describe('withValue', () => {
@@ -43,6 +44,19 @@ describe('withCancel', () => {
     expect(child).toBe(root);
 
     expect(childCancel).not.toBe(rootCancel);
+  });
+
+  it('cascades cancellation with reason', () => {
+    const [ctxRoot, cancel] = Context.cancel();
+    const [ctxChild] = ctxRoot.withCancel();
+    const [ctxGrandChild] = ctxChild.withCancel();
+
+    const rootErr = new DeadlineError();
+    cancel(rootErr);
+
+    expect(ctxGrandChild.canceler.canceled).toBe(true);
+    expect(ctxGrandChild.canceler.err).toBe(rootErr);
+    expect(DeadlineError.is(ctxGrandChild.canceler.err)).toBe(true);
   });
 });
 
@@ -156,6 +170,49 @@ describe('withDeadline', () => {
 
     expect(msg).toBe('canceled!');
   });
+
+  it('cancels with DeadlineError if timed out', async () => {
+    let capturedError: Error = null!;
+
+    const [ctx] = withDeadline(Context.background, new Date(+new Date() + 10));
+    ctx.canceler.onCancel((err) => (capturedError = err));
+    await wait(15);
+
+    expect(DeadlineError.is(capturedError)).toBe(true);
+  });
+
+  it('cancels with non-DeadlineError if canceled directly', async () => {
+    let capturedError: Error = null!;
+
+    const [ctx, cancel] = withDeadline(
+      Context.background,
+      new Date(+new Date() + 10)
+    );
+    ctx.canceler.onCancel((err) => (capturedError = err));
+    cancel();
+
+    await wait(15);
+
+    expect(DeadlineError.is(capturedError)).toBe(false);
+  });
+
+  it('cancels with non-DeadlineError if cascade canceled', async () => {
+    let capturedError: Error = null!;
+
+    const [ctxRoot, cancel] = Context.cancel();
+    const [ctxChild] = ctxRoot.withCancel();
+    const [ctxGrandChild] = ctxChild.withCancel();
+
+    const [ctx] = withDeadline(ctxGrandChild, new Date(+new Date() + 10));
+
+    ctx.canceler.onCancel((err) => (capturedError = err));
+
+    cancel();
+
+    await wait(15);
+
+    expect(DeadlineError.is(capturedError)).toBe(false);
+  });
 });
 
 describe('withTimeout', () => {
@@ -170,5 +227,45 @@ describe('withTimeout', () => {
     await wait(15);
 
     expect(msg).toBe('canceled!');
+  });
+
+  it('cancels with DeadlineError if timed out', async () => {
+    let capturedError: Error = null!;
+
+    const [ctx] = withTimeout(Context.background, 10);
+    ctx.canceler.onCancel((err) => (capturedError = err));
+    await wait(15);
+
+    expect(DeadlineError.is(capturedError)).toBe(true);
+  });
+
+  it('cancels with non-DeadlineError if canceled directly', async () => {
+    let capturedError: Error = null!;
+
+    const [ctx, cancel] = withTimeout(Context.background, 10);
+    ctx.canceler.onCancel((err) => (capturedError = err));
+    cancel();
+
+    await wait(15);
+
+    expect(DeadlineError.is(capturedError)).toBe(false);
+  });
+
+  it('cancels with non-DeadlineError if cascade canceled', async () => {
+    let capturedError: Error = null!;
+
+    const [ctxRoot, cancel] = Context.cancel();
+    const [ctxChild] = ctxRoot.withCancel();
+    const [ctxGrandChild] = ctxChild.withCancel();
+
+    const [ctx] = withTimeout(ctxGrandChild, 10);
+
+    ctx.canceler.onCancel((err) => (capturedError = err));
+
+    cancel();
+
+    await wait(15);
+
+    expect(DeadlineError.is(capturedError)).toBe(false);
   });
 });
