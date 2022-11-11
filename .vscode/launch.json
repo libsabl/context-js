@@ -2,6 +2,7 @@
   "configurations": [
     {
       "type": "node",
+      "runtimeVersion": "16",
       "name": "vscode-jest-tests",
       "request": "launch",
       "console": "integratedTerminal",
@@ -16,7 +17,8 @@
       ]
     },
     {
-      "type": "pwa-node",
+      "type": "node",
+      "runtimeVersion": "16",
       "name": "check-license",
       "request": "launch",
       "console": "integratedTerminal",
@@ -29,7 +31,8 @@
       ]
     },
     {
-      "type": "pwa-node",
+      "type": "node",
+      "runtimeVersion": "16",
       "name": "publish",
       "request": "launch",
       "console": "integratedTerminal",
