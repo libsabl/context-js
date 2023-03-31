@@ -49,7 +49,7 @@ export class Context {
     return this.#parent.canceler;
   }
 
-  /** Check whether the context is canceled. Returns false if parent if canceler is null. */
+  /** Check whether the context is canceled. Returns false if parent or canceler is null. */
   get canceled(): boolean {
     return this.canceler?.canceled || false;
   }

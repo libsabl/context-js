@@ -12,8 +12,15 @@
 */
 export type CancelFunc = (reason?: string | Error) => void;
 
+/**
+ * @summary A signature compatible with any function that can be
+ * called without arguments, and where the return value will be ignored
+ */
 export type VoidCallback = () => void;
 
+/**
+ * @summary A callback to be invoked when a {@link Canceler} is canceled
+ */
 export type CanceledCallback = (err: CanceledError) => void;
 
 const cancelerToken = Symbol('Canceler');
@@ -53,7 +60,8 @@ export class CanceledError extends Error {
   /**
    * Decorate `reason` to indicate that it was
    * a cancellation error, so that calling `CanceledError.is()`
-   * on the value will return true.
+   * on the value will return true. `reason` can be any
+   * value with `typeof === 'object'`
    */
   static as<T extends object>(reason: T): T {
     if (reason == null) return reason;
@@ -114,6 +122,7 @@ export class DeadlineError extends CanceledError {
    * Decorate `reason` to indicate that it was
    * a deadline cancellation error, so that calling
    * `DeadlineError.is()` on the value will return true.
+   * `reason` can be any value with `typeof === 'object'`
    */
   static as<T extends object>(reason: T): T {
     if (reason == null) return reason;
@@ -174,7 +183,11 @@ export class Canceler {
     return this.#canceled;
   }
 
-  /** The reason the Canceler was canceled */
+  /**
+   * The reason the Canceler was canceled.
+   * Always non-null if {@link canceled} is true,
+   * always null if {@link canceled} is false
+   */
   get err(): CanceledError | null {
     return this.#err;
   }
